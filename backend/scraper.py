@@ -1,3 +1,6 @@
+import feedparser
+import re
+
 def auto_tag(title):
     title = title.lower()
     tags = []
@@ -23,25 +26,47 @@ def auto_tag(title):
 
     return tags
 
-import feedparser
+
+def extract_image(entry):
+    # 1. Try media:content
+    if 'media_content' in entry:
+        return entry['media_content'][0].get('url', '')
+
+    # 2. Try media:thumbnail
+    if 'media_thumbnail' in entry:
+        return entry['media_thumbnail'][0].get('url', '')
+
+    # 3. Try image in 'content' or 'summary'
+    content = entry.get('content', [{}])[0].get('value', '') or entry.get('summary', '')
+    img_match = re.search(r'<img[^>]+src="([^">]+)"', content)
+    if img_match:
+        return img_match.group(1)
+
+    # 4. Try image in links
+    for link in entry.get("links", []):
+        if link.get("type", "").startswith("image"):
+            return link.get("href", "")
+
+    # 5. Fallback placeholder image
+    return "https://placehold.co/300x200?text=No+Image"
+
 
 def fetch_all_rss_articles():
     sources = {
-    "Wired": "https://www.wired.com/feed/rss",
-    "The Hindu": "https://www.thehindu.com/news/national/feeder/default.rss",
-    "Reuters": "http://feeds.reuters.com/reuters/topNews",
-    "Washington Post": "http://feeds.washingtonpost.com/rss/national",
-    "The New Yorker": "https://www.newyorker.com/feed/news",
-    "NYTimes": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-    "Newslaundry": "https://www.newslaundry.com/feed",
-    "Al Jazeera": "https://www.aljazeera.com/xml/rss/all.xml",
-    "WSJ": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
-    "The Economist": "https://www.economist.com/the-world-this-week/rss.xml",
-    "The Guardian": "https://www.theguardian.com/world/rss",
-    "Caravan Magazine": "https://caravanmagazine.in/rss",
-    "The Wire": "https://thewire.in/feed"
-}
-    
+        "Wired": "https://www.wired.com/feed/rss",
+        "The Hindu": "https://www.thehindu.com/news/national/feeder/default.rss",
+        "Reuters": "http://feeds.reuters.com/reuters/topNews",
+        "Washington Post": "http://feeds.washingtonpost.com/rss/national",
+        "The New Yorker": "https://www.newyorker.com/feed/news",
+        "NYTimes": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+        "Newslaundry": "https://www.newslaundry.com/feed",
+        "Al Jazeera": "https://www.aljazeera.com/xml/rss/all.xml",
+        "WSJ": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+        "The Economist": "https://www.economist.com/the-world-this-week/rss.xml",
+        "The Guardian": "https://www.theguardian.com/world/rss",
+        "Caravan Magazine": "https://caravanmagazine.in/rss",
+        "The Wire": "https://thewire.in/feed"
+    }
 
     all_articles = []
 
@@ -52,7 +77,7 @@ def fetch_all_rss_articles():
                 all_articles.append({
                     "title": entry.get("title", "Untitled"),
                     "link": entry.get("link", ""),
-                    "img": entry.get("media_content", [{}])[0].get("url", "") if entry.get("media_content") else "",
+                    "image": extract_image(entry),
                     "tags": auto_tag(entry.get("title", "") + " " + entry.get("summary", "")),
                     "source": source
                 })

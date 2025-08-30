@@ -2,8 +2,8 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import os
 
-# ✅ Corrected import path — assuming scraper.py is inside the backend/ folder
-from backend.scraper import fetch_all_rss_articles
+# ✅ Corrected import path — scraper.py is in the same folder
+from scraper import fetch_all_rss_articles
 
 app = Flask(__name__)
 CORS(app)
