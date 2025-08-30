@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./App.css";
 
 function App() {
   const [articles, setArticles] = useState([]);
@@ -62,17 +63,30 @@ function App() {
         </label>
       </div>
 
-      <ul>
-        {filteredArticles.map((article, i) => (
-          <li key={i} style={{ marginBottom: "20px", textAlign: "left" }}>
-            <a href={article.link} target="_blank" rel="noopener noreferrer"><strong>{article.title}</strong></a>
-            <div><em>{article.source}</em></div>
-            {article.tags && article.tags.length > 0 && (
-              <div>Tags: {article.tags.join(", ")}</div>
-            )}
-          </li>
-        ))}
-      </ul>
+        <div className="card-grid">
+  {filteredArticles.map((article, i) => (
+    <div className="card" key={i}>
+      <img
+        src={article.image || "https://via.placeholder.com/300x200"}
+        alt={article.title}
+        className="card-image"
+      />
+      <div className="card-content">
+        <a href={article.link} target="_blank" rel="noopener noreferrer">
+          <h3 className="card-title">{article.title}</h3>
+        </a>
+        <p className="card-source">{article.source}</p>
+        {article.tags && article.tags.length > 0 && (
+          <div className="card-tags">
+            {article.tags.map((tag, idx) => (
+              <span className="tag" key={idx}>{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  ))}
+</div>
     </div>
   );
 }
