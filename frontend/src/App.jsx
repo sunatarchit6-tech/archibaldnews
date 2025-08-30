@@ -4,7 +4,7 @@ function App() {
   const [articles, setArticles] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/news/today")
+    fetch("https://archibaldnews-backend.onrender.com/news/today")
       .then(res => res.json())
       .then(data => setArticles(data));
   }, []);
