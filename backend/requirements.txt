@@ -19,3 +19,5 @@ typing_extensions==4.15.0
 urllib3==2.5.0
 Werkzeug==3.1.3
 newspaper3k
+lxml==5.2.1
+lxml-html-clean==0.1.1
