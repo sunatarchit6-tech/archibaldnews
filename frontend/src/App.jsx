@@ -6,7 +6,6 @@ function App() {
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [sources, setSources] = useState([]);
   const [tags, setTags] = useState([]);
-
   const [selectedSource, setSelectedSource] = useState("All");
   const [selectedTag, setSelectedTag] = useState("All");
 
@@ -14,6 +13,7 @@ function App() {
     fetch("https://archibaldnews-backend.onrender.com/news/today")
       .then((res) => res.json())
       .then((data) => {
+        console.log("✅ Raw article data:", data);
         setArticles(data);
         setFilteredArticles(data);
 
@@ -22,7 +22,8 @@ function App() {
 
         const allTags = Array.from(new Set(data.flatMap((a) => a.tags || []))).sort();
         setTags(["All", ...allTags]);
-      });
+      })
+      .catch((err) => console.error("❌ Failed to fetch articles:", err));
   }, []);
 
   useEffect(() => {
@@ -63,30 +64,52 @@ function App() {
         </label>
       </div>
 
-        <div className="card-grid">
-  {filteredArticles.map((article, i) => (
-    <div className="card" key={i}>
-      <img
-        src={article.image || "https://via.placeholder.com/300x200"}
-        alt={article.title}
-        className="card-image"
-      />
-      <div className="card-content">
-        <a href={article.link} target="_blank" rel="noopener noreferrer">
-          <h3 className="card-title">{article.title}</h3>
-        </a>
-        <p className="card-source">{article.source}</p>
-        {article.tags && article.tags.length > 0 && (
-          <div className="card-tags">
-            {article.tags.map((tag, idx) => (
-              <span className="tag" key={idx}>{tag}</span>
-            ))}
+      <div className="card-grid">
+        {filteredArticles.map((article, i) => (
+          <div className="card" key={i}>
+            <img
+              src={article.image || "https://placehold.co/300x200?text=No+Image"}
+              alt={article.title}
+              className="card-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://placehold.co/300x200?text=No+Image";
+              }}
+            />
+            <div className="card-content">
+              <a href={article.link} target="_blank" rel="noopener noreferrer">
+                <h3 className="card-title">{article.title}</h3>
+              </a>
+
+              {/* ✅ Author and Published Date */}
+              <div className="card-meta">
+                {article.author && article.author !== "Unknown" && (
+                  <p className="card-author">🖊️ {article.author}</p>
+                )}
+                {article.published && (
+                  <p className="card-date">
+                    📅 {new Date(article.published).toLocaleDateString("en-IN", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                )}
+              </div>
+
+              <p className="card-source">{article.source}</p>
+
+              {article.tags && article.tags.length > 0 && (
+                <div className="card-tags">
+                  {article.tags.map((tag, idx) => (
+                    <span className="tag" key={idx}>{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        ))}
       </div>
-    </div>
-  ))}
-</div>
     </div>
   );
 }

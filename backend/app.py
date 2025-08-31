@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import os
 
-# ✅ Corrected import path — scraper.py is in the same folder
+# 👇 Ensure correct relative import (adjust if your folder name is different)
 from scraper import fetch_all_rss_articles
 
 app = Flask(__name__)

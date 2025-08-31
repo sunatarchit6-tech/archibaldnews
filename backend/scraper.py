@@ -1,5 +1,7 @@
 import feedparser
 import re
+from newspaper import Article
+from dateutil import parser as date_parser
 
 def auto_tag(title):
     title = title.lower()
@@ -26,30 +28,54 @@ def auto_tag(title):
 
     return tags
 
-
-def extract_image(entry):
-    # 1. Try media:content
-    if 'media_content' in entry:
-        return entry['media_content'][0].get('url', '')
-
-    # 2. Try media:thumbnail
-    if 'media_thumbnail' in entry:
-        return entry['media_thumbnail'][0].get('url', '')
-
-    # 3. Try image in 'content' or 'summary'
-    content = entry.get('content', [{}])[0].get('value', '') or entry.get('summary', '')
-    img_match = re.search(r'<img[^>]+src="([^">]+)"', content)
-    if img_match:
-        return img_match.group(1)
-
-    # 4. Try image in links
-    for link in entry.get("links", []):
-        if link.get("type", "").startswith("image"):
-            return link.get("href", "")
-
-    # 5. Fallback placeholder image
+def extract_image_from_html(entry):
+    content = entry.get("content", [{}])[0].get("value", "") or entry.get("summary", "")
+    match = re.search(r'<img[^>]+src="([^">]+)"', content)
+    if match:
+        return match.group(1)
     return "https://placehold.co/300x200?text=No+Image"
 
+def extract_article_data(link, entry):
+    try:
+        article = Article(link)
+        article.download()
+        article.parse()
+
+        author = article.authors[0] if article.authors else entry.get("author", "Unknown")
+
+        if article.publish_date:
+            published = date_parser.parse(article.publish_date.isoformat()).isoformat()
+        elif "published" in entry:
+            published = date_parser.parse(entry["published"]).isoformat()
+        else:
+            published = ""
+
+        image = article.top_image if article.top_image else extract_image_from_html(entry)
+
+        return {
+            "image": image,
+            "author": author,
+            "published": published
+        }
+
+    except Exception as e:
+        print(f"⚠️ Error extracting article data: {e}")
+
+        fallback_author = entry.get("author", "Unknown")
+        fallback_image = extract_image_from_html(entry)
+        fallback_published = ""
+
+        if "published" in entry:
+            try:
+                fallback_published = date_parser.parse(entry["published"]).isoformat()
+            except:
+                fallback_published = ""
+
+        return {
+            "image": fallback_image,
+            "author": fallback_author,
+            "published": fallback_published
+        }
 
 def fetch_all_rss_articles():
     sources = {
@@ -74,13 +100,22 @@ def fetch_all_rss_articles():
         try:
             feed = feedparser.parse(feed_url)
             for entry in feed.entries[:10]:
+                title = entry.get("title", "Untitled")
+                link = entry.get("link", "")
+                summary = entry.get("summary", "")
+
+                article_data = extract_article_data(link, entry)
+
                 all_articles.append({
-                    "title": entry.get("title", "Untitled"),
-                    "link": entry.get("link", ""),
-                    "image": extract_image(entry),
-                    "tags": auto_tag(entry.get("title", "") + " " + entry.get("summary", "")),
+                    "title": title,
+                    "link": link,
+                    "image": article_data["image"],
+                    "author": article_data["author"],
+                    "published": article_data["published"],
+                    "tags": auto_tag(f"{title} {summary}"),
                     "source": source
                 })
+
         except Exception as e:
             print(f"❌ Failed to fetch from {source}: {e}")
 
