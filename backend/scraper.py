@@ -113,28 +113,21 @@ def extract_article_data(link, entry):
         }
 
 def fetch_all_rss_articles():
+    
     sources = {
-        "Wired": "https://www.wired.com/feed/rss",
-        "The Hindu": "https://www.thehindu.com/news/national/feeder/default.rss",
-        "Reuters": "http://feeds.reuters.com/reuters/topNews",
-        "Washington Post": "http://feeds.washingtonpost.com/rss/national",
-        "The New Yorker": "https://www.newyorker.com/feed/news",
-        "NYTimes": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-        "Newslaundry": "https://www.newslaundry.com/feed",
-        "Al Jazeera": "https://www.aljazeera.com/xml/rss/all.xml",
-        "WSJ": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
-        "The Economist": "https://www.economist.com/the-world-this-week/rss.xml",
-        "The Guardian": "https://www.theguardian.com/world/rss",
-        "Caravan Magazine": "https://caravanmagazine.in/rss",
-        "The Wire": "https://thewire.in/feed"
-    }
-
+    "Wired": "https://www.wired.com/feed/rss",
+    "TechCrunch": "https://techcrunch.com/feed/",
+    "NYTimes": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+    "WSJ": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+    "The Guardian": "https://www.theguardian.com/world/rss"
+}
+    
     all_articles = []
 
     for source, feed_url in sources.items():
         try:
             feed = feedparser.parse(feed_url)
-            for entry in feed.entries[:10]:
+            for entry in feed.entries[:3]:
                 title = entry.get("title", "Untitled")
                 link = entry.get("link", "")
                 summary = entry.get("summary", "")
