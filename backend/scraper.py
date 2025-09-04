@@ -7,24 +7,59 @@ def auto_tag(title):
     title = title.lower()
     tags = []
 
-    if any(word in title for word in ["modi", "parliament", "bjp", "congress", "election", "india"]):
-        tags.append("Indian Politics")
-    if any(word in title for word in ["nato", "israel", "gaza", "ukraine", "china", "geopolitics"]):
-        tags.append("Geopolitics")
-    if any(word in title for word in ["ai", "startup", "tech", "nvidia", "google", "microsoft", "software"]):
-        tags.append("Technology")
-    if any(word in title for word in ["inflation", "finance", "markets", "recession", "stock", "bank"]):
-        tags.append("Economics")
-    if any(word in title for word in ["culture", "film", "music", "book", "festival"]):
-        tags.append("Culture")
-    if any(word in title for word in ["sociology", "inequality", "caste", "gender"]):
-        tags.append("Sociology")
-    if any(word in title for word in ["philosophy", "ethics", "existential", "moral", "nietzsche", "stoic"]):
-        tags.append("Philosophy")
-    if any(word in title for word in ["business", "startup", "ipo", "merger", "corporate"]):
-        tags.append("Business")
-    if any(word in title for word in ["world", "global", "diplomacy", "conflict"]):
-        tags.append("World Affairs")
+    TAG_KEYWORDS = {
+        "Indian Politics": [
+            "modi", "bjp", "congress", "aap", "parliament", "loksabha", "rajyasabha", "election",
+            "nda", "upsc", "indian government", "cabinet", "governor", "cm", "sc verdict", 
+            "politician", "voting", "reservation", "supreme court", "lok sabha", "rajya sabha", 
+            "policy", "delhi politics"
+        ],
+        "Geopolitics": [
+            "nato", "gaza", "israel", "ukraine", "russia", "china", "taiwan", "iran", "hamas", 
+            "hezbollah", "un", "sanctions", "geopolitics", "conflict", "defence", "military", 
+            "global security", "diplomacy", "nuclear"
+        ],
+        "Technology": [
+            "ai", "artificial intelligence", "nvidia", "google", "microsoft", "apple", "openai", 
+            "chatgpt", "robotics", "software", "hardware", "coding", "developer", "cloud", 
+            "semiconductors", "data", "cybersecurity", "tech", "startups"
+        ],
+        "Economics": [
+            "inflation", "deflation", "interest rate", "recession", "stock market", "banking", 
+            "gdp", "unemployment", "cpi", "economy", "fiscal", "budget", "reserve bank", "rbi", 
+            "finance", "economic policy", "markets", "tax", "monetary"
+        ],
+        "Culture": [
+            "film", "movie", "cinema", "music", "art", "book", "literature", "festival", 
+            "tradition", "theatre", "dance", "celebration", "painting", "documentary", 
+            "cultural event", "heritage", "bollywood"
+        ],
+        "Society": [
+            "sociology", "gender", "inequality", "caste", "religion", "discrimination", 
+            "social justice", "rights", "feminism", "dalit", "minorities", "lgbtq", "poverty", 
+            "education", "urbanization", "migration", "tribal", "diversity", "social issue", 
+            "patriarchy"
+        ],
+        "Philosophy": [
+            "philosophy", "ethics", "morality", "existential", "stoic", "stoicism", "nietzsche", 
+            "sartre", "plato", "aristotle", "utilitarian", "kant", "freedom", "meaning of life", 
+            "consciousness", "human nature", "logic", "reason"
+        ],
+        "Business": [
+            "startup", "ipo", "merger", "acquisition", "corporate", "business", "entrepreneur", 
+            "funding", "venture capital", "deal", "valuation", "board", "leadership", "strategy", 
+            "industry", "profit", "b2b", "brand"
+        ],
+        "World Affairs": [
+            "global", "international", "world", "united nations", "diplomacy", "foreign policy", 
+            "conflict", "climate", "treaty", "summit", "g20", "global economy", "world bank", 
+            "imf", "migration", "refugee", "peace talks"
+        ]
+    }
+
+    for tag, keywords in TAG_KEYWORDS.items():
+        if any(keyword in title for keyword in keywords):
+            tags.append(tag)
 
     return tags
 
