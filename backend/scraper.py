@@ -2,80 +2,80 @@ import feedparser
 import re
 from dateutil import parser as date_parser
 
-# Simple tagger
-def auto_tag(title):
-    title = title.lower()
-    tags = []
+TAG_KEYWORDS = {
+    "Broker News": [
+        "broker", "zerodha", "groww", "angel one", "upstox", "dhan", "sahi", "icici direct",
+        "hdfc securities", "new broker", "discount broker", "full service broker"
+    ],
+    "Fintech": [
+        "fintech", "upi", "digital wallet", "payment app", "neo bank", "paytm", "phonepe",
+        "google pay", "cred", "investment app", "personal finance", "fintech startup"
+    ],
+    "SEBI/Regulation": [
+        "sebi", "regulation", "compliance", "market rules", "nse", "bse", "circular", "rbi",
+        "margin trading", "leverage", "penalty", "surveillance", "audit", "insider trading"
+    ],
+    "Stock Market News": [
+        "nifty", "sensex", "stock market", "derivatives", "f&o", "options", "intraday",
+        "stocks", "ipos", "earnings", "quarterly results", "exchange", "market trend"
+    ],
+    "Competitor Updates": [
+        "zerodha", "kite", "nudge", "pulse", "varsity", "sensibull", "streak",
+        "dhan", "options trader", "tag", "strategy builder",
+        "groww", "indmoney", "sahi invest"
+    ]
+}
 
-    TAG_KEYWORDS = {
-        "Technology": ["ai", "google", "microsoft", "nvidia", "apple", "openai", "robot", "tech", "software", "cloud", "startup"],
-        "Economics": ["inflation", "recession", "gdp", "economy", "stock", "market", "rbi", "bank", "fiscal", "budget", "finance"],
-        "Geopolitics": ["gaza", "israel", "ukraine", "russia", "china", "taiwan", "nato", "diplomacy", "un", "military", "sanctions"],
-        "Culture": ["movie", "film", "art", "book", "literature", "festival", "music", "theatre", "heritage", "bollywood"],
-        "Society": ["gender", "caste", "religion", "education", "lgbtq", "tribal", "poverty", "urban", "rights"],
-        "Business": ["ipo", "startup", "funding", "valuation", "merger", "acquisition", "corporate", "profit"],
-        "World Affairs": ["global", "united nations", "treaty", "summit", "migration", "refugee", "foreign policy"]
-    }
+RSS_FEEDS = {
+    # Competitor blogs
+    "Zerodha": "https://zerodha.com/z-connect/feed",
+    "Dhan": "https://blog.dhan.co/feed/",
+    "Groww": "https://groww.in/blog/feed",
+    "INDmoney": "https://indmoney.com/feed",
+    "Sahi Invest": "https://www.sahiinvest.com/feed",
+    # Market/finance news
+    "Moneycontrol": "https://www.moneycontrol.com/rss/latestnews.xml",
+    "Business Standard": "https://www.business-standard.com/rss/markets-106.rss",
+    "Economic Times Markets": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+    "LiveMint": "https://www.livemint.com/rss/markets",
+    "BloombergQuint": "https://www.bqprime.com/rss/markets",
+    "SEBI Press Releases": "https://www.sebi.gov.in/sebiweb/rss/sebi_news.rss"
+}
 
-    for tag, keywords in TAG_KEYWORDS.items():
-        if any(keyword in title for keyword in keywords):
-            tags.append(tag)
-
-    return tags
-
-# Extract image
 def extract_image_from_html(entry):
     content = entry.get("content", [{}])[0].get("value", "") or entry.get("summary", "")
     match = re.search(r'<img[^>]+src="([^">]+)"', content)
-    if match:
-        return match.group(1)
-    return "https://placehold.co/300x200?text=No+Image"
+    return match.group(1) if match else "https://placehold.co/300x200?text=No+Image"
 
-# Paywall checker
-def is_paywalled(entry, link):
-    paywall_keywords = ["subscribe", "sign in", "membership", "paywall", "premium", "register"]
-    paywalled_domains = ["wsj.com", "economist.com", "barrons.com", "ft.com"]
+def auto_tag(text):
+    text = text.lower()
+    tags = []
+    for tag, keywords in TAG_KEYWORDS.items():
+        if any(keyword in text for keyword in keywords):
+            tags.append(tag)
+    return tags
 
-    if any(domain in link for domain in paywalled_domains):
-        return True
-
-    content = entry.get("summary", "") + " " + str(entry.get("content", [{}])[0].get("value", ""))
-    if any(keyword in content.lower() for keyword in paywall_keywords):
-        return True
-
-    return False
-
-# Fetch RSS
 def fetch_all_rss_articles():
-    sources = {
-        "Wired": "https://www.wired.com/feed/rss",
-        "TechCrunch": "https://techcrunch.com/feed/",
-        "NYTimes": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-        "WSJ": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
-        "The Guardian": "https://www.theguardian.com/world/rss"
-    }
-
     all_articles = []
 
-    for source, feed_url in sources.items():
+    for source, url in RSS_FEEDS.items():
         try:
-            feed = feedparser.parse(feed_url)
-            for entry in feed.entries[:3]:
+            feed = feedparser.parse(url)
+            for entry in feed.entries[:5]:
                 title = entry.get("title", "Untitled")
                 link = entry.get("link", "")
                 summary = entry.get("summary", "")
-
-                if is_paywalled(entry, link):
-                    print(f"⛔ Skipping paywalled article: {link}")
-                    continue
-
-                image = extract_image_from_html(entry)
                 author = entry.get("author", "Unknown")
+                image = extract_image_from_html(entry)
 
                 try:
                     published = date_parser.parse(entry.get("published", "")).isoformat()
                 except:
                     published = ""
+
+                tags = auto_tag(f"{title} {summary}")
+                if not tags:
+                    continue  # skip irrelevant articles
 
                 all_articles.append({
                     "title": title,
@@ -83,7 +83,7 @@ def fetch_all_rss_articles():
                     "image": image,
                     "author": author,
                     "published": published,
-                    "tags": auto_tag(f"{title} {summary}"),
+                    "tags": tags,
                     "source": source
                 })
 
@@ -91,3 +91,10 @@ def fetch_all_rss_articles():
             print(f"❌ Failed to fetch from {source}: {e}")
 
     return all_articles
+
+# Debug only: run and print result
+if __name__ == "__main__":
+    articles = fetch_all_rss_articles()
+    print(f"\n✅ Total relevant articles fetched: {len(articles)}\n")
+    for art in articles:
+        print(f"• {art['title']} ({art['source']}) — Tags: {', '.join(art['tags'])}")
