@@ -3,9 +3,6 @@ import re
 from dateutil import parser as date_parser
 from datetime import datetime, timedelta
 
-# ------------------------------
-# ✅ Define keywords for tagging
-# ------------------------------
 TAG_KEYWORDS = {
     "Broker News": [
         "broker", "zerodha", "groww", "angel one", "upstox", "dhan", "sahi", "icici direct",
@@ -30,17 +27,12 @@ TAG_KEYWORDS = {
     ]
 }
 
-# ------------------------------
-# ✅ Define all RSS feed sources
-# ------------------------------
 RSS_FEEDS = {
-    # Competitor blogs
     "Zerodha": "https://zerodha.com/z-connect/feed",
     "Dhan": "https://blog.dhan.co/feed/",
     "Groww": "https://groww.in/blog/feed",
     "INDmoney": "https://indmoney.com/feed",
     "Sahi Invest": "https://www.sahiinvest.com/feed",
-    # Market/finance news
     "Moneycontrol": "https://www.moneycontrol.com/rss/latestnews.xml",
     "Business Standard": "https://www.business-standard.com/rss/markets-106.rss",
     "Economic Times Markets": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
@@ -49,17 +41,11 @@ RSS_FEEDS = {
     "SEBI Press Releases": "https://www.sebi.gov.in/sebiweb/rss/sebi_news.rss"
 }
 
-# ------------------------------
-# ✅ Extract image from HTML
-# ------------------------------
 def extract_image_from_html(entry):
-    content = entry.get("content", [{}])[0].get("value", "") or entry.get("summary", "") or entry.get("description", "")
+    content = entry.get("content", [{}])[0].get("value", "") or entry.get("summary", "")
     match = re.search(r'<img[^>]+src="([^">]+)"', content)
     return match.group(1) if match else "https://placehold.co/300x200?text=No+Image"
 
-# ------------------------------
-# ✅ Tag based on content
-# ------------------------------
 def auto_tag(text):
     text = text.lower()
     tags = []
@@ -68,62 +54,52 @@ def auto_tag(text):
             tags.append(tag)
     return tags
 
-# ------------------------------
-# ✅ Main fetch function
-# ------------------------------
 def fetch_all_rss_articles():
     all_articles = []
-    cutoff_date = datetime.now() - timedelta(days=2)
+    now = datetime.utcnow()
+    one_week_ago = now - timedelta(days=7)
 
     for source, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url)
-            print(f"🔍 Processing {source} — {len(feed.entries)} entries found")
-
-            count = 0
-            for entry in feed.entries[:15]:
+            for entry in feed.entries[:5]:
                 title = entry.get("title", "Untitled")
                 link = entry.get("link", "")
-                summary = entry.get("summary", "") or entry.get("description", "")
+                summary = entry.get("summary", "")
                 author = entry.get("author", "Unknown")
                 image = extract_image_from_html(entry)
 
                 try:
-                    published = date_parser.parse(entry.get("published", ""))
-                    if published < cutoff_date:
-                        continue
-                    published_iso = published.isoformat()
+                    published_raw = entry.get("published", "") or entry.get("updated", "")
+                    published_dt = date_parser.parse(published_raw)
+                    if published_dt < one_week_ago:
+                        continue  # skip if older than 7 days
+                    published = published_dt.isoformat()
                 except:
-                    published_iso = ""
+                    continue  # skip articles without valid date
 
                 tags = auto_tag(f"{title} {summary}")
                 if not tags:
-                    continue
+                    continue  # skip irrelevant articles
 
                 all_articles.append({
                     "title": title,
                     "link": link,
                     "image": image,
                     "author": author,
-                    "published": published_iso,
+                    "published": published,
                     "tags": tags,
                     "source": source
                 })
-
-                count += 1
-
-            print(f"✅ {source}: {count} relevant articles added\n")
 
         except Exception as e:
             print(f"❌ Failed to fetch from {source}: {e}")
 
     return all_articles
 
-# ------------------------------
-# ✅ Run manually
-# ------------------------------
+# Debug only
 if __name__ == "__main__":
     articles = fetch_all_rss_articles()
-    print(f"\n📰 Total relevant articles fetched: {len(articles)}\n")
+    print(f"\n✅ Total relevant articles fetched: {len(articles)}\n")
     for art in articles:
         print(f"• {art['title']} ({art['source']}) — Tags: {', '.join(art['tags'])}")
