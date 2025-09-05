@@ -98,3 +98,22 @@ select {
 label {
   font-weight: 500;
 }
+
+/* ✅ New styles for the Load More button */
+.load-more {
+  margin-top: 2rem;
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background-color: #111;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.load-more:hover {
+  background-color: #333;
+  transform: scale(1.03);
+}

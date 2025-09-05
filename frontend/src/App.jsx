@@ -8,6 +8,9 @@ function App() {
   const [tags, setTags] = useState([]);
   const [selectedSource, setSelectedSource] = useState("All");
   const [selectedTag, setSelectedTag] = useState("All");
+  const [visibleCount, setVisibleCount] = useState(9);
+
+  const ARTICLES_PER_PAGE = 9;
 
   useEffect(() => {
     fetch("https://archibaldnews-backend.onrender.com/news/today")
@@ -38,6 +41,7 @@ function App() {
     }
 
     setFilteredArticles(filtered);
+    setVisibleCount(ARTICLES_PER_PAGE); // Reset on filter change
   }, [selectedSource, selectedTag, articles]);
 
   return (
@@ -65,7 +69,7 @@ function App() {
       </div>
 
       <div className="card-grid">
-        {filteredArticles.map((article, i) => (
+        {filteredArticles.slice(0, visibleCount).map((article, i) => (
           <div className="card" key={i}>
             <img
               src={article.image || "https://placehold.co/300x200?text=No+Image"}
@@ -81,7 +85,6 @@ function App() {
                 <h3 className="card-title">{article.title}</h3>
               </a>
 
-              {/* ✅ Author and Published Date */}
               <div className="card-meta">
                 {article.author && article.author !== "Unknown" && (
                   <p className="card-author">🖊️ {article.author}</p>
@@ -110,6 +113,15 @@ function App() {
           </div>
         ))}
       </div>
+
+      {/* Load More button */}
+      {visibleCount < filteredArticles.length && (
+        <div style={{ textAlign: "center", marginTop: "2rem" }}>
+          <button className="load-more" onClick={() => setVisibleCount(prev => prev + ARTICLES_PER_PAGE)}>
+            Load More
+          </button>
+        </div>
+      )}
     </div>
   );
 }
