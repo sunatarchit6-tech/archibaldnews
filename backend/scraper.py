@@ -28,10 +28,6 @@ TAG_KEYWORDS = {
 }
 
 RSS_FEEDS = {
-    "Zerodha": "https://zerodha.com/z-connect/feed",
-    "Dhan": "https://blog.dhan.co/feed/",
-    "Groww": "https://groww.in/blog/feed",
-    "INDmoney": "https://indmoney.com/feed",
     "Sahi Invest": "https://www.sahiinvest.com/feed",
     "Moneycontrol": "https://www.moneycontrol.com/rss/latestnews.xml",
     "Business Standard": "https://www.business-standard.com/rss/markets-106.rss",
