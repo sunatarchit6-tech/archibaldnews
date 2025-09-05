@@ -2,59 +2,19 @@ import feedparser
 import re
 from dateutil import parser as date_parser
 
-# ✅ Define auto_tag to prevent NameError
+# Simple tagger
 def auto_tag(title):
     title = title.lower()
     tags = []
 
     TAG_KEYWORDS = {
-        "Indian Politics": [
-            "modi", "bjp", "congress", "aap", "parliament", "loksabha", "rajyasabha", "election",
-            "nda", "upsc", "indian government", "cabinet", "governor", "cm", "sc verdict",
-            "politician", "voting", "reservation", "supreme court", "lok sabha", "rajya sabha",
-            "policy", "delhi politics"
-        ],
-        "Geopolitics": [
-            "nato", "gaza", "israel", "ukraine", "russia", "china", "taiwan", "iran", "hamas",
-            "hezbollah", "un", "sanctions", "geopolitics", "conflict", "defence", "military",
-            "global security", "diplomacy", "nuclear"
-        ],
-        "Technology": [
-            "ai", "artificial intelligence", "nvidia", "google", "microsoft", "apple", "openai",
-            "chatgpt", "robotics", "software", "hardware", "coding", "developer", "cloud",
-            "semiconductors", "data", "cybersecurity", "tech", "startups"
-        ],
-        "Economics": [
-            "inflation", "deflation", "interest rate", "recession", "stock market", "banking",
-            "gdp", "unemployment", "cpi", "economy", "fiscal", "budget", "reserve bank", "rbi",
-            "finance", "economic policy", "markets", "tax", "monetary"
-        ],
-        "Culture": [
-            "film", "movie", "cinema", "music", "art", "book", "literature", "festival",
-            "tradition", "theatre", "dance", "celebration", "painting", "documentary",
-            "cultural event", "heritage", "bollywood"
-        ],
-        "Society": [
-            "sociology", "gender", "inequality", "caste", "religion", "discrimination",
-            "social justice", "rights", "feminism", "dalit", "minorities", "lgbtq", "poverty",
-            "education", "urbanization", "migration", "tribal", "diversity", "social issue",
-            "patriarchy"
-        ],
-        "Philosophy": [
-            "philosophy", "ethics", "morality", "existential", "stoic", "stoicism", "nietzsche",
-            "sartre", "plato", "aristotle", "utilitarian", "kant", "freedom", "meaning of life",
-            "consciousness", "human nature", "logic", "reason"
-        ],
-        "Business": [
-            "startup", "ipo", "merger", "acquisition", "corporate", "business", "entrepreneur",
-            "funding", "venture capital", "deal", "valuation", "board", "leadership", "strategy",
-            "industry", "profit", "b2b", "brand"
-        ],
-        "World Affairs": [
-            "global", "international", "world", "united nations", "diplomacy", "foreign policy",
-            "conflict", "climate", "treaty", "summit", "g20", "global economy", "world bank",
-            "imf", "migration", "refugee", "peace talks"
-        ]
+        "Technology": ["ai", "google", "microsoft", "nvidia", "apple", "openai", "robot", "tech", "software", "cloud", "startup"],
+        "Economics": ["inflation", "recession", "gdp", "economy", "stock", "market", "rbi", "bank", "fiscal", "budget", "finance"],
+        "Geopolitics": ["gaza", "israel", "ukraine", "russia", "china", "taiwan", "nato", "diplomacy", "un", "military", "sanctions"],
+        "Culture": ["movie", "film", "art", "book", "literature", "festival", "music", "theatre", "heritage", "bollywood"],
+        "Society": ["gender", "caste", "religion", "education", "lgbtq", "tribal", "poverty", "urban", "rights"],
+        "Business": ["ipo", "startup", "funding", "valuation", "merger", "acquisition", "corporate", "profit"],
+        "World Affairs": ["global", "united nations", "treaty", "summit", "migration", "refugee", "foreign policy"]
     }
 
     for tag, keywords in TAG_KEYWORDS.items():
@@ -63,6 +23,7 @@ def auto_tag(title):
 
     return tags
 
+# Extract image
 def extract_image_from_html(entry):
     content = entry.get("content", [{}])[0].get("value", "") or entry.get("summary", "")
     match = re.search(r'<img[^>]+src="([^">]+)"', content)
@@ -70,6 +31,21 @@ def extract_image_from_html(entry):
         return match.group(1)
     return "https://placehold.co/300x200?text=No+Image"
 
+# Paywall checker
+def is_paywalled(entry, link):
+    paywall_keywords = ["subscribe", "sign in", "membership", "paywall", "premium", "register"]
+    paywalled_domains = ["wsj.com", "economist.com", "barrons.com", "ft.com"]
+
+    if any(domain in link for domain in paywalled_domains):
+        return True
+
+    content = entry.get("summary", "") + " " + str(entry.get("content", [{}])[0].get("value", ""))
+    if any(keyword in content.lower() for keyword in paywall_keywords):
+        return True
+
+    return False
+
+# Fetch RSS
 def fetch_all_rss_articles():
     sources = {
         "Wired": "https://www.wired.com/feed/rss",
@@ -88,6 +64,11 @@ def fetch_all_rss_articles():
                 title = entry.get("title", "Untitled")
                 link = entry.get("link", "")
                 summary = entry.get("summary", "")
+
+                if is_paywalled(entry, link):
+                    print(f"⛔ Skipping paywalled article: {link}")
+                    continue
+
                 image = extract_image_from_html(entry)
                 author = entry.get("author", "Unknown")
 
