@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import os, json
+import os
+import json
 from datetime import datetime
 from scraper import fetch_all_rss_articles
 
@@ -9,7 +10,7 @@ CORS(app)
 
 CACHE_FILE = "cached_articles.json"
 
-@app.route('/news/today')
+@app.route('/news/today', methods=["GET"])
 def get_cached_news():
     if os.path.exists(CACHE_FILE):
         try:
@@ -19,11 +20,13 @@ def get_cached_news():
         except Exception as e:
             print("⚠️ Failed to load cache:", e)
 
+    # fallback: fetch fresh if cache fails
     try:
         articles = fetch_all_rss_articles()
         return jsonify(articles)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/news/fetch-and-cache', methods=["POST"])
 def fetch_and_cache_news():
@@ -38,6 +41,7 @@ def fetch_and_cache_news():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     import sys
