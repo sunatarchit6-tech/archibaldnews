@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
 import json
@@ -8,19 +8,24 @@ from scraper import fetch_all_rss_articles
 app = Flask(__name__)
 CORS(app)
 
-CACHE_FILE = "cached_articles.json"
+# Explicit path to avoid cache issues
+CACHE_FILE = os.path.join(os.path.dirname(__file__), "cached_articles.json")
 
-@app.route('/news/today')
+
+@app.route('/news/today', methods=["GET"])
 def get_cached_news():
     if os.path.exists(CACHE_FILE):
         try:
             with open(CACHE_FILE, "r") as f:
                 articles = json.load(f)
-                return jsonify(articles)
+                # Filter for today only
+                today = datetime.today().date().isoformat()
+                today_articles = [a for a in articles if a.get("published", "").startswith(today)]
+                return jsonify(today_articles)
         except Exception as e:
             print("⚠️ Failed to load cache:", e)
 
-    # fallback: fetch fresh if cache fails
+    # fallback: fetch if cache missing
     try:
         articles = fetch_all_rss_articles()
         return jsonify(articles)
@@ -43,6 +48,8 @@ def fetch_and_cache_news():
         return jsonify({"error": str(e)}), 500
 
 
+# Port binding for Render
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    import sys
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
