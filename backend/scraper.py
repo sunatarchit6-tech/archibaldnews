@@ -3,7 +3,6 @@ import re
 from dateutil import parser as date_parser
 from datetime import datetime, timedelta
 
-# Define relevant keywords for filtering and tagging
 TAG_KEYWORDS = {
     "Broker News": [
         "broker", "zerodha", "groww", "angel one", "upstox", "dhan", "sahi", "icici direct",
@@ -28,26 +27,25 @@ TAG_KEYWORDS = {
     ]
 }
 
-# Define RSS feed sources
 RSS_FEEDS = {
-
-    # Market/finance news
+    "Zerodha": "https://zerodha.com/z-connect/feed",
+    "Dhan": "https://blog.dhan.co/feed/",
+    "Groww": "https://groww.in/blog/feed",
+    "INDmoney": "https://indmoney.com/feed",
+    "Sahi Invest": "https://www.sahiinvest.com/feed",
     "Moneycontrol": "https://www.moneycontrol.com/rss/latestnews.xml",
     "Business Standard": "https://www.business-standard.com/rss/markets-106.rss",
     "Economic Times Markets": "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
     "LiveMint": "https://www.livemint.com/rss/markets",
     "BloombergQuint": "https://www.bqprime.com/rss/markets",
-    "SEBI Press Releases": "https://www.sebi.gov.in/sebiweb/rss/sebi_news.rss",
-    "Sahi Invest": "https://www.sahiinvest.com/feed"
+    "SEBI Press Releases": "https://www.sebi.gov.in/sebiweb/rss/sebi_news.rss"
 }
 
-# Extract image URL from HTML
 def extract_image_from_html(entry):
     content = entry.get("content", [{}])[0].get("value", "") or entry.get("summary", "")
     match = re.search(r'<img[^>]+src="([^">]+)"', content)
     return match.group(1) if match else "https://placehold.co/300x200?text=No+Image"
 
-# Tag based on keywords
 def auto_tag(text):
     text = text.lower()
     tags = []
@@ -56,7 +54,6 @@ def auto_tag(text):
             tags.append(tag)
     return tags
 
-# Main RSS parsing logic
 def fetch_all_rss_articles():
     all_articles = []
     one_week_ago = datetime.now() - timedelta(days=7)
@@ -64,30 +61,26 @@ def fetch_all_rss_articles():
     for source, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url)
-            print(f"🔗 Fetching from: {source} — {len(feed.entries)} entries")
-
-            for entry in feed.entries[:8]:  # fetch top 8 per source
+            for entry in feed.entries:
                 title = entry.get("title", "Untitled")
                 link = entry.get("link", "")
                 summary = entry.get("summary", "")
                 author = entry.get("author", "Unknown")
                 image = extract_image_from_html(entry)
 
-                # Parse published date and filter by time
                 try:
-                    published_str = entry.get("published", "") or entry.get("updated", "")
-                    published_date = date_parser.parse(published_str)
-                    if published_date < one_week_ago:
+                    published_raw = entry.get("published", "")
+                    published_dt = date_parser.parse(published_raw)
+                    if published_dt < one_week_ago:
                         continue
-                    published = published_date.isoformat()
+                    published = published_dt.isoformat()
                 except:
-                    continue  # skip if date can't be parsed
+                    continue  # skip if invalid or missing date
 
                 tags = auto_tag(f"{title} {summary}")
                 if not tags:
-                    continue  # skip if no relevant tags
+                    continue
 
-                print(f"✅ Found: {title} ({source}) — Tags: {tags}")
                 all_articles.append({
                     "title": title,
                     "link": link,
@@ -101,9 +94,10 @@ def fetch_all_rss_articles():
         except Exception as e:
             print(f"❌ Failed to fetch from {source}: {e}")
 
-    print(f"\n✅ Total relevant articles fetched: {len(all_articles)}\n")
     return all_articles
 
-# Run standalone for testing
 if __name__ == "__main__":
-    fetch_all_rss_articles()
+    articles = fetch_all_rss_articles()
+    print(f"\n✅ Total recent relevant articles: {len(articles)}\n")
+    for art in articles:
+        print(f"• {art['title']} ({art['source']}) — Tags: {', '.join(art['tags'])}")
